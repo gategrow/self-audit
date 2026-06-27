@@ -5,11 +5,14 @@ Usage:
     self-audit --text "response" --requirements "fix bug" "add tests"
     cat response.txt | self-audit --verbose
     self-audit --file response.txt --json
+    self-audit --version
 """
 import argparse
 import json
 import re
 import sys
+
+from self_audit import __version__
 
 
 def check_completeness(text, requirements):
@@ -59,6 +62,7 @@ def main():
     p.add_argument("--requirements", nargs="*", default=[], help="Expected requirements")
     p.add_argument("--json", action="store_true", help="Output as JSON")
     p.add_argument("--verbose", action="store_true", help="Show suggestions")
+    p.add_argument("--version", action="version", version=f"self-audit {__version__}")
     args = p.parse_args()
 
     if args.file:
@@ -87,7 +91,9 @@ def main():
     else:
         for dim, result in results.items():
             status = "OK" if result["passed"] else "FIXED"
-            detail = f"  [{result['issues'][0]}]" if args.verbose and not result["passed"] and result["issues"] else ""
+            detail = ""
+            if args.verbose and not result["passed"] and result["issues"]:
+                detail = f"  [{result['issues'][0]}]"
             print(f"{dim.capitalize():15s}: {status}{detail}")
         print(f"\n{'PASS' if all_pass else 'FAIL'}")
 

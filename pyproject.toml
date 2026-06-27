@@ -1,7 +1,8 @@
 [project]
 name = "self-audit"
 version = "1.0.0"
-description = "Four-dimension AI output quality audit — Completeness, Consistency, Groundedness, Honesty. Implements Constitutional AI principles."
+description = "Four-dimension AI output quality audit — Completeness, Consistency, Groundedness, Honesty. Zero deps, stdlib only. Implements Constitutional AI principles."
+readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.8"
 dependencies = []
@@ -10,7 +11,13 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
 [project.scripts]
