@@ -21,30 +21,32 @@ except ImportError:
 
 
 def check_completeness(text, requirements):
+    """Check that each requirement appears as a substring in the text (case-insensitive)."""
     missing = [r for r in requirements if r.lower() not in text.lower()]
     return {"passed": len(missing) == 0, "issues": missing}
 
 
 def check_consistency(text):
-    """Detect internal contradictions: claims that are undermined by evidence in the same text.
+    """Detect internal contradictions: claims undermined by evidence in the same text.
 
     Each (pattern, description) pair catches a specific contradiction class.
+    Uses word stems (modif, writ) to catch all inflected forms.
     """
     patterns = [
         # Claims no changes but evidence of edits
-        (r'(?:no\s+changes?\s+needed|nothing\s+to\s+change|looks?\s+good).{0,100}(?:edit|write|modify)',
+        (r'(?:no\s+changes?\s+needed|nothing\s+to\s+change|looks?\s+good).{0,100}(?:edit|writ|modif)',
          "Claims no changes needed but editing occurred"),
         # "All pass except X" — the qualifier contradicts "all"
         (r'(?:all|everything).{0,50}(?:pass(?:es|ed)?|works?|done).{0,50}(?:except|but|however|although)',
          "Claims all pass with exceptions"),
         # "Didn't change X" followed by editing X
-        (r"(?:didn['’]t|haven['’]t|hasn['’]t)\s+(?:change|modify|touch|alter).{0,200}(?:edit|write|modify)",
+        (r"(?:didn['’]t|haven['’]t|hasn['’]t)\s+(?:change|modif|touch|alter).{0,200}(?:edit|writ|modif)",
          "Claims nothing was changed but editing occurred"),
         # "Only/JUST one change" but context shows multiple edits
         (r'(?:only|just|single)\s+(?:one\s+)?(?:change|edit|fix|line).{0,200}(?:(?:second|another|also|additional)\s+(?:change|edit|fix))',
          "Claims single change but another edit is mentioned"),
         # "Already done/fixed" but still performing edits
-        (r'(?:already|previously)\s+(?:done|fixed|handled|implemented|addressed).{0,200}(?:edit|write|add|modify)',
+        (r'(?:already|previously)\s+(?:done|fixed|handled|implemented|addressed).{0,200}(?:edit|writ|add|modif)',
          "Claims already done but still making edits"),
         # "Simple/trivial change" but description reveals complexity
         (r'(?:simple|trivial|minor|small|quick)\s+(?:change|fix|edit|patch).{0,200}(?:refactor|rewrite|restructure|overhaul)',
@@ -77,7 +79,11 @@ def check_groundedness(text):
 
 
 def check_honesty(text):
-    """Detect over-claiming: statements that assert verification or quality that the text itself undermines."""
+    """Detect over-claiming: statements asserting verification or quality that the text itself undermines.
+
+    Negative lookaheads (?!...) check that evidence words do NOT appear within 200 chars
+    after the claim — if they do, the claim is substantiated and the pattern skips it.
+    """
     patterns = [
         # "I verified/tested" but admits not actually running/checking
         r"I'?ve?\s+(?:verified|tested|checked|confirmed).{0,50}(?:without|but|however).{0,30}(?:actual(?:ly)?|really|running)",
@@ -85,12 +91,12 @@ def check_honesty(text):
         r'(?:production\s*ready|battle\s*tested|rock\s*solid).{0,100}(?:TODO|FIXME|stub|placeholder)',
         # Classic dodge — "works on my machine"
         r'works?\s+(?:on|in)\s+(?:my|our)\s+(?:machine|computer|local|dev|environment)',
-        # "Couldn't reproduce" with no investigation details
-        r"(?:couldn['’]t|cannot|can['’]t)\s+reproduce.{0,200}(?!(?:log|trace|error|stack|debug|investigat|detail|specific))",
-        # "I reviewed/read [file]" as verification but cites nothing from it
-        r"I'?ve?\s+(?:read|reviewed|looked\s+at)\s+(?:the\s+)?(?:file|code|output|log|diff).{0,200}(?!(?:line|says|shows|contains|states|function|class|method|var|import|def))",
-        # "Manually verified/tested" but no description of what was done
-        r'(?:manually|by\s+hand)\s+(?:tested|verified|checked|confirmed).{0,200}(?!(?:step|procedure|process|how|method|way|ran?\s+|executed|opened|clicked))',
+        # "Couldn't reproduce" with no investigation details within 200 chars
+        r"(?:couldn['’]t|cannot|can['’]t)\s+reproduce(?!.{0,200}(?:log|trace|error|stack|debug|investigat|detail|specific))",
+        # "I reviewed/read [file]" but cites nothing from it within 200 chars
+        r"I'?ve?\s+(?:read|reviewed|looked\s+at)\s+(?:the\s+)?(?:file|code|output|log|diff)(?!.{0,200}(?:line|says|shows|contains|states|function|class|method|var|import|def))",
+        # "Manually verified/tested" but no procedure described within 200 chars
+        r'(?:manually|by\s+hand)\s+(?:tested|verified|checked|confirmed)(?!.{0,200}(?:step|procedure|process|how|method|way|ran?\s+|executed|opened|clicked))',
     ]
     findings = []
     for p in patterns:
